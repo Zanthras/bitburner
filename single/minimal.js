@@ -1,3 +1,5 @@
+import * as global from "/module/globals.js"
+
 // Pass the object below to use
 // {
 // 	"Script": "hack",
@@ -17,16 +19,17 @@ export async function main(ns) {
         let start = Date.now()
         let expectedTotal = (data.Duration + data.Sleep)
         let startDelay = (expectedTotal + start) - data.ExpectedEnd
-        if (startDelay > 200) {
+        if (startDelay > 150) {
             data.Sleep = data.Sleep - startDelay
-            ns.tprintf("%s stack %d startupdelay %.2f", data.Script, data.Stack, delta)
+            ns.tprintf("%s stack %d startupdelay %.2f", data.Script, data.Stack, startDelay)
         }
         await ns.sleep(data.Sleep)
         let end = Date.now()
         let actual = end - start
         let delta = actual - data.Sleep
-        if (delta > 200) {
+        if (delta > global.StackDelay) {
             ns.tprintf("%s stack %d overslept by %.2f", data.Script, data.Stack, delta)
+            return
         }
     }
     await ns[data.Script](data.Target)

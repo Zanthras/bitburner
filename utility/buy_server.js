@@ -3,9 +3,9 @@ import * as helper from "/module/helper-functions.js"
 /** @param {NS} ns **/
 export async function main(ns) {
 
-    if (ns.args.length == 0) {
-        ns.tprint("Specify small|medium|large|max")
-    }
+    // if (ns.args.length == 0) {
+    // 	ns.tprint("Specify small|medium|large|max")
+    // }
     let maxRam = ns.getPurchasedServerMaxRam()
     let ram = 0;
     if (ns.args[0] == "micro") {
@@ -20,7 +20,7 @@ export async function main(ns) {
     if (ns.args[0] == "large") {
         ram = 524288
     }
-    if (ns.args[0] == "afford") {
+    if (ns.args[0] == "afford" || ns.args.length == 0) {
         ram = 16
         let money = ns.getPlayer().money
         while (true) {

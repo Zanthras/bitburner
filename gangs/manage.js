@@ -1,6 +1,6 @@
 /** @param {NS} ns **/
 export async function main(ns) {
-    ns.disableLog("purchaseEquipment")
+    // ns.disableLog("purchaseEquipment")
     while (true) {
         if (ns.gang.canRecruitMember()) {
             let memberCount = ns.gang.getMemberNames().length
@@ -22,12 +22,16 @@ export async function main(ns) {
             continue
         }
         let trainingHalf = Math.ceil(orderedMembers.length / 2)
+        if (orderedMembers.length == 12) {
+            trainingHalf = 0
+        }
         for (let i = 0; i < trainingHalf; i++) {
             let trainingMember = orderedMembers.pop()
             ns.gang.setMemberTask(trainingMember, "Train Combat")
         }
         if (orderedMembers.length == 1) {
             ns.toast("Write the code for a single gang member not training!", "info", 1000 * 10)
+            await ns.sleep(60 * 1000)
             continue
         }
         // wanted pentaly of 1 is no deduction 0 is everything
@@ -39,17 +43,25 @@ export async function main(ns) {
             let batman = orderedMembers.pop()
             ns.gang.setMemberTask(batman, "Vigilante Justice")
         }
+        if (ns.gang.getGangInformation().wantedPenalty < .7) {
+            let catgirl = orderedMembers.pop()
+            ns.gang.setMemberTask(catgirl, "Vigilante Justice")
+        }
         // if (ns.gang.getMemberNames().length == 12) {
         // 	let guard = orderedMembers.pop()
         // 	ns.gang.setMemberTask(guard, "Territory Warfare")
         // }
         for (let i = 0; i < orderedMembers.length; i++) {
             let missionMember = orderedMembers[i]
+            let member = ns.gang.getMemberInformation(missionMember)
+            let stats = gangMemberTotalStats(member)
             let task = "Mug People"
-            task = "Human Trafficking"
-            // if (i < 2) {
-            // 	task = "Human Trafficking"
-            // }
+            if (stats > 2200) {
+                task = "Strongarm Civilians"
+            }
+            if (stats > 4000) {
+                task = "Human Trafficking"
+            }
             ns.gang.setMemberTask(missionMember, task)
         }
         await ns.sleep(60 * 1000)

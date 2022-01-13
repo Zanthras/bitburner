@@ -6,8 +6,8 @@ export async function CopyFiles(ns, node) {
     await ns.scp(["/distribute/hack.js", "/distribute/loader.js", "/distribute/random.js"], "home", node)
     await ns.scp(["calcBestMPS.js", "targetted.js", "orchestrate.js"], "home", node)
     await ns.scp(["/single/hack.js", "/single/grow.js", "/single/weaken.js", "/single/idle.js", "/single/minimal.js"], "home", node)
-    await ns.scp(["/module/helper-functions.js", "/module/node-functions.js", "/module/script-functions.js", "/module/stack-functions.js"], "home", node)
-    await ns.scp(["/background/fixup.js", "/background/mass-fix.js", "/background/idle.js"], "home", node)
+    await ns.scp(["/module/helper-functions.js", "/module/node-functions.js", "/module/script-functions.js", "/module/stack-functions.js", "/module/globals.js"], "home", node)
+    await ns.scp(["/background/fixup.js", "/background/mass-fix.js", "/background/idle.js", "/background/manage-hacknet.js"], "home", node)
 }
 
 export function readablizeBytes(bytes) {

@@ -101,7 +101,7 @@ export async function main(ns) {
             }
         }
         if (doPrint) {
-            ns.tprintf("%18s %8s(%2d%%) * %2d(%3d) = %8s %s %s",
+            ns.tprintf("%18s %8s(%2d%%) * %3d(%3d) = %8s %s %s",
                 options[i].node,
                 helper.readablizeMoney(options[i].gain),
                 options[i].percent,

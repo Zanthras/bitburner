@@ -14,7 +14,7 @@ export async function main(ns) {
     ns.disableLog("sleep")
 
     var node = ns.args[0]
-    let percent = .95
+    var percent = script.GetLargestPercent(ns, node)
     var loops = 0
 
     var host = ns.getHostname()
@@ -33,7 +33,7 @@ export async function main(ns) {
     }
     ns.tprintf("%s Starting an orchestration with %d stacks of %d%% steal", new Date().toISOString(), stackCount, Math.floor(percent * 100))
 
-    if (stackCount == 1) {
+    if (stackCount <= 1) {
         await runSimpleStacks(ns, node)
     }
 
@@ -107,9 +107,9 @@ function startStack(ns, sID, node, stackInfo) {
     tohack["Stack"] = sID
     togrow["Stack"] = sID
     toweak["Stack"] = sID
-    ns.run(script.minimal_js, tohack.Threads, node, JSON.stringify(tohack))
-    ns.run(script.minimal_js, togrow.Threads, node, JSON.stringify(togrow))
-    ns.run(script.minimal_js, toweak.Threads, node, JSON.stringify(toweak))
+    ns.run(script.hack_js, tohack.Threads, node, JSON.stringify(tohack))
+    ns.run(script.grow_js, togrow.Threads, node, JSON.stringify(togrow))
+    ns.run(script.weaken_js, toweak.Threads, node, JSON.stringify(toweak))
 }
 
 /** @param {NS} ns **/
@@ -131,12 +131,16 @@ async function simpleStack(ns, node, percent) {
             }
         }
     }
-    ns.run(script.hack_js, hackThreads, node)
-    ns.run(script.grow_js, growThreads, node)
-    ns.run(script.weaken_js, weakenThreads, node)
-    await script.waitforcompletion(ns, script.hack_js, node)
-    await script.waitforcompletion(ns, script.grow_js, node)
-    await script.waitforcompletion(ns, script.weaken_js, node)
+    let tohack = { "Script": "hack", "Target": node, "Sleep": 0 }
+    let togrow = { "Script": "grow", "Target": node, "Sleep": 0 }
+    let toweak = { "Script": "weaken", "Target": node, "Sleep": 0 }
+    ns.run(script.hack_js, hackThreads, node, JSON.stringify(tohack))
+    ns.run(script.grow_js, growThreads, node, JSON.stringify(togrow))
+    ns.run(script.weaken_js, weakenThreads, node, JSON.stringify(toweak))
+    await script.waitforAllSinglecompletion(ns, node)
+    // await script.waitforcompletion(ns, script.hack_js, node)
+    // await script.waitforcompletion(ns, script.grow_js, node)
+    // await script.waitforcompletion(ns, script.weaken_js, node)
 }
 
 
@@ -148,11 +152,16 @@ async function runSimpleStacks(ns, node) {
         if (percent == .01) {
             await script.FixUpServer(ns, node)
             let hackThreads = script.calcThreadstoDrainNPercentMoney(ns, node, percent)
-            ns.run(script.hack_js, hackThreads, node)
-            await script.waitforcompletion(ns, script.hack_js, node)
+            let tohack = { "Script": "hack", "Target": target, "Sleep": 0 }
+            ns.run(script.hack_js, hackThreads, node, JSON.stringify(tohack))
+            await script.waitforAllSinglecompletion(ns, node)
         } else {
             await script.FixUpServer(ns, node)
             await simpleStack(ns, node, percent)
         }
     }
+}
+
+export function autocomplete(data, args) {
+    return [...data.servers];
 }

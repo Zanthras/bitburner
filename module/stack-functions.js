@@ -1,8 +1,8 @@
 import * as script from "/module/script-functions.js"
 
 
-export const ScriptDelay = 300
-export const StackDelay = 400
+export const ScriptDelay = 200
+export const StackDelay = 200
 export const MinStackInterval = (ScriptDelay * 2) + StackDelay
 
 

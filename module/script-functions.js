@@ -120,10 +120,10 @@ export function GetLargestPercent(ns, target) {
             // 	Math.floor(startPercent*100),
             // 	calcThreadstoDrainNPercentMoney(ns, target, startPercent),
             // 	calcThreadstoRestoreFromNPercentDrained(ns, target, startPercent),
-            // 	weakenThreads,
+            // 	weakenThreadsNeeded,
             // 	totalNeeded,
             // 	availThreads)
-            return startPercent - .01
+            return Math.max(startPercent - .01, .01)
         }
         startPercent += .01
     }
@@ -144,8 +144,8 @@ export function calcThreadstoDrainNPercentMoney(ns, host, percent) {
 /** @param {NS} ns **/
 export function calcThreadstoRestoreFromNPercentDrained(ns, host, percent) {
     let threadsNeeded = ns.growthAnalyze(host, 1 / (1 - percent))
-    // pad the number by 20% to hopefully... not be fucked
-    threadsNeeded = threadsNeeded * 1.2
+    // pad the number by 10% to hopefully... not be fucked
+    threadsNeeded = threadsNeeded * 1.1
     return Math.ceil(threadsNeeded)
 }
 
@@ -153,7 +153,7 @@ export function calcThreadstoRestoreFromNPercentDrained(ns, host, percent) {
 export function calcThreadstoFullMoney(ns, host) {
     let maxMoney = ns.getServerMaxMoney(host)
     let currentMoney = ns.getServerMoneyAvailable(host)
-    let needed = maxMoney / currentMoney
+    let needed = maxMoney / Math.max(currentMoney, 1)
     let threadsNeeded = ns.growthAnalyze(host, needed)
     return Math.ceil(threadsNeeded)
 }
@@ -188,15 +188,17 @@ export async function FixUpServer(ns, target) {
             let tNeed = calcThreadstoMinSecurity(ns, target)
             if (tNeed > tAvail) {
                 tNeed = tAvail
-                ns.run(weaken_js, tNeed, target)
-                await waitforcompletion(ns, weaken_js, target)
+                let toweak = { "Script": "weaken", "Target": target, "Sleep": 0 }
+                ns.run(weaken_js, tNeed, target, JSON.stringify(toweak))
+                await waitforAllSinglecompletion(ns, target)
                 continue
             } else {
                 // I have some free threads... lets grow it a bit if needed
                 if (isServerAtMaxMoney(ns, target)) {
                     // No grow needed just do the weaken
-                    ns.run(weaken_js, tNeed, target)
-                    await waitforcompletion(ns, weaken_js, target)
+                    let toweak = { "Script": "weaken", "Target": target, "Sleep": 0 }
+                    ns.run(weaken_js, tNeed, target, JSON.stringify(toweak))
+                    await waitforAllSinglecompletion(ns, target)
                     continue
                 } else {
                     let threads = calcBalancedGrow(ns, target, tAvail - tNeed)
@@ -204,10 +206,11 @@ export async function FixUpServer(ns, target) {
                     if (tOvershoot > 0) {
                         threads.Grow = threads.Grow - tOvershoot
                     }
-                    ns.run(grow_js, threads.Grow, target)
-                    ns.run(weaken_js, threads.Weaken + tNeed, target)
-                    await waitforcompletion(ns, grow_js, target)
-                    await waitforcompletion(ns, weaken_js, target)
+                    let toweak = { "Script": "weaken", "Target": target, "Sleep": 0 }
+                    ns.run(weaken_js, threads.Weaken + tNeed, target, JSON.stringify(toweak))
+                    let togrow = { "Script": "grow", "Target": target, "Sleep": 0 }
+                    ns.run(grow_js, threads.Grow, target, JSON.stringify(togrow))
+                    await waitforAllSinglecompletion(ns, target)
                     continue
                 }
             }
@@ -219,10 +222,11 @@ export async function FixUpServer(ns, target) {
             if (tOvershoot > 0) {
                 threads.Grow = threads.Grow - tOvershoot
             }
-            ns.run(grow_js, threads.Grow, target)
-            ns.run(weaken_js, threads.Weaken, target)
-            await waitforcompletion(ns, grow_js, target)
-            await waitforcompletion(ns, weaken_js, target)
+            let toweak = { "Script": "weaken", "Target": target, "Sleep": 0 }
+            ns.run(weaken_js, threads.Weaken, target, JSON.stringify(toweak))
+            let togrow = { "Script": "grow", "Target": target, "Sleep": 0 }
+            ns.run(grow_js, threads.Grow, target, JSON.stringify(togrow))
+            await waitforAllSinglecompletion(ns, target)
         }
     }
 }

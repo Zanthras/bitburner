@@ -15,7 +15,9 @@ export async function main(ns) {
     ns.disableLog("getServerSecurityLevel")
     ns.disableLog("getServerMoneyAvailable")
 
-    var nodes = node.AllRemoteServers
+    // var nodes = node.AllRemoteServers
+    var nodes = node.findAllNodes(ns)
+
 
     while (true) {
         results = [];
@@ -40,8 +42,7 @@ async function OwnAndStatus(ns, node) {
     if (node.startsWith("home")) {
         return
     }
-    let hackStatus = tryHack(ns, node)
-    await helper.CopyFiles(ns, node)
+    let hackStatus = await tryHack(ns, node)
     let nodeCol = node.padEnd(20, " ")
     let secCol = ("Sec: " + ns.getServerMinSecurityLevel(node)).padEnd(10, " ")
     let moneyCol = ("Money: " + helper.readablizeMoney(ns.getServerMaxMoney(node))).padEnd(18, " ")
@@ -59,7 +60,7 @@ async function OwnAndStatus(ns, node) {
 
 
 /** @param {NS} ns **/
-function tryHack(ns, node) {
+async function tryHack(ns, node) {
     var serverdat = ns.getServer(node)
     var playerdat = ns.getPlayer()
     if (serverdat.requiredHackingSkill > playerdat.hacking) {
@@ -102,11 +103,9 @@ function tryHack(ns, node) {
     }
     if (!serverdat.hasAdminRights) {
         ns.nuke(node)
-        // if (ns.getServerMaxRam(ns.getHostname()) > 128) {
-        // ns.run("/background/fixup.js", 1, node)
-        // }
-        ns.toast("Owned " + node, "success", 30000)
+        ns.toast("Owned " + node, "success", 15000)
+        await helper.CopyFiles(ns, node)
+        await ns.sleep(500)
     }
-
     return "Owned"
 }

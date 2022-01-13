@@ -28,6 +28,7 @@ export async function main(ns) {
         let perfect = 0
         let touched = 0
         for (let i = 0; i < ownedNodes.length; i++) {
+            await ns.sleep(1)
             let target = ownedNodes[i]
             let tAvail = script.getServerThreadAvail(ns)
             // Dont touch perfect servers
@@ -48,14 +49,16 @@ export async function main(ns) {
                 let tNeed = script.calcThreadstoMinSecurity(ns, target)
                 if (tNeed > tAvail) {
                     tNeed = tAvail
-                    ns.run(script.weaken_js, tNeed, target)
+                    let toweak = { "Script": "weaken", "Target": target, "Sleep": 0 }
+                    ns.run(script.weaken_js, tNeed, target, JSON.stringify(toweak))
                     touched++
                     continue
                 } else {
                     // I have some free threads... lets grow it a bit if needed
                     if (script.isServerAtMaxMoney(ns, target)) {
                         // No grow needed just do the weaken
-                        ns.run(script.weaken_js, tNeed, target)
+                        let toweak = { "Script": "weaken", "Target": target, "Sleep": 0 }
+                        ns.run(script.weaken_js, tNeed, target, JSON.stringify(toweak))
                         touched++
                         continue
                     } else {
@@ -64,8 +67,10 @@ export async function main(ns) {
                         if (tOvershoot > 0) {
                             threads.Grow = threads.Grow - tOvershoot
                         }
-                        ns.run(script.grow_js, threads.Grow, target)
-                        ns.run(script.weaken_js, threads.Weaken + tNeed, target)
+                        let togrow = { "Script": "grow", "Target": target, "Sleep": 0 }
+                        ns.run(script.grow_js, threads.Grow, target, JSON.stringify(togrow))
+                        let toweak = { "Script": "weaken", "Target": target, "Sleep": 0 }
+                        ns.run(script.weaken_js, threads.Weaken + tNeed, target, JSON.stringify(toweak))
                         touched++
                         continue
                     }
@@ -78,8 +83,10 @@ export async function main(ns) {
                 if (tOvershoot > 0) {
                     threads.Grow = threads.Grow - tOvershoot
                 }
-                ns.run(script.grow_js, threads.Grow, target)
-                ns.run(script.weaken_js, threads.Weaken, target)
+                let togrow = { "Script": "grow", "Target": target, "Sleep": 0 }
+                ns.run(script.grow_js, threads.Grow, target, JSON.stringify(togrow))
+                let toweak = { "Script": "weaken", "Target": target, "Sleep": 0 }
+                ns.run(script.weaken_js, threads.Weaken, target, JSON.stringify(toweak))
                 touched++
                 continue
             }

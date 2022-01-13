@@ -1,6 +1,4 @@
 import * as script from "/module/script-functions.js"
-import * as node from "/module/node-functions.js"
-import * as helper from "/module/helper-functions.js"
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -16,4 +14,9 @@ export async function main(ns) {
 
     var target = ns.args[0]
     await script.FixUpServer(ns, target)
+}
+
+
+export function autocomplete(data, args) {
+    return [...data.servers];
 }

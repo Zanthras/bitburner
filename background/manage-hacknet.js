@@ -24,7 +24,7 @@ async function buyLevel(ns) {
     var cheapestCost = 1e300;
     var myMoney = ns.getPlayer().money
 
-    let reserved = Math.floor(moneySpent*.3)
+    let reserved = Math.floor(moneySpent*.4)
     myMoney = myMoney - reserved
 
     for (let i = 0; i < nodeCount; i++) {
