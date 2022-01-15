@@ -105,49 +105,48 @@ export async function waitforAllSinglecompletion(ns, target) {
 
 /** @param {NS} ns **/
 export function GetLargestPercent(ns, target) {
-    var startPercent = .01
+    var startPercent = .00
     while (startPercent < .95) {
-        let hackThreads = calcThreadstoDrainNPercentMoney(ns, target, startPercent)
-        let growThreads = calcThreadstoRestoreFromNPercentDrained(ns, target, startPercent)
-        let hackSecIncrease = hackThreads * 0.002
-        let growSecIncrease = growThreads * 0.004
+        startPercent += .01
+        let threadCount = calcThreadstoStealNPercent(ns, target, startPercent)
+        let hackSecIncrease = threadCount.Hack * 0.002
+        let growSecIncrease = threadCount.Grow * 0.004
         let weakenThreadsNeeded = Math.ceil((hackSecIncrease + growSecIncrease) / .05)
         let availThreads = getServerThreadAvail(ns)
-        let totalNeeded = hackThreads + growThreads + weakenThreadsNeeded
+        let totalNeeded = threadCount.Hack + threadCount.Grow + weakenThreadsNeeded
+        // ns.tprintf(
+        // 	"Percent: %d hT:%d gT:%d wT:%d tT:%d aT:%d",
+        // 	Math.floor(startPercent * 100),
+        // 	threadCount.Hack,
+        // 	threadCount.Grow,
+        // 	weakenThreadsNeeded,
+        // 	totalNeeded,
+        // 	availThreads)
         if (totalNeeded > availThreads) {
-            // ns.tprintf(
-            // 	"Percent: %d hT:%d gT:%d wT:%d tT:%d aT:%d",
-            // 	Math.floor(startPercent*100),
-            // 	calcThreadstoDrainNPercentMoney(ns, target, startPercent),
-            // 	calcThreadstoRestoreFromNPercentDrained(ns, target, startPercent),
-            // 	weakenThreadsNeeded,
-            // 	totalNeeded,
-            // 	availThreads)
-            return Math.max(startPercent - .01, .01)
+            return Math.max(startPercent - .01, 0)
         }
-        startPercent += .01
     }
     return startPercent
 }
 
 
-/** @param {NS} ns **/
-export function calcThreadstoDrainNPercentMoney(ns, host, percent) {
+export function calcThreadstoStealNPercent(ns, host, percent) {
     let maxMoney = ns.getServerMaxMoney(host)
-    let needed = maxMoney * percent
-    let threadsNeeded = ns.hackAnalyzeThreads(host, needed)
-    threadsNeeded = Math.max(threadsNeeded, 0)
-    return Math.floor(threadsNeeded)
+    let moneyToHack = maxMoney * percent
+    let hackThreads = ns.hackAnalyzeThreads(host, moneyToHack)
+    hackThreads = Math.max(hackThreads, 0)
+    let secIncrease = hackThreads * 0.002
+    let minSec = ns.getServerMinSecurityLevel(host)
+    let hackedSec = minSec + secIncrease
+    let secPercent = hackedSec / minSec
+    // Pad the grow a bit to help out during hack spikes
+    let addition = Math.floor(percent / 40)
+    percent = percent + (addition / 100)
+    let growThreads = ns.growthAnalyze(host, 1 / (1 - percent))
+    growThreads = growThreads * secPercent
+    return { "Hack": Math.floor(hackThreads), "Grow": Math.ceil(growThreads) }
 }
 
-
-/** @param {NS} ns **/
-export function calcThreadstoRestoreFromNPercentDrained(ns, host, percent) {
-    let threadsNeeded = ns.growthAnalyze(host, 1 / (1 - percent))
-    // pad the number by 10% to hopefully... not be fucked
-    threadsNeeded = threadsNeeded * 1.1
-    return Math.ceil(threadsNeeded)
-}
 
 /** @param {NS} ns **/
 export function calcThreadstoFullMoney(ns, host) {

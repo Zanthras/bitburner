@@ -12,8 +12,7 @@ import * as global from "/module/globals.js"
 // }
 
 /** @param {NS} ns **/
-export async function main(ns) {
-
+export async function Singleton(ns) {
     var data = JSON.parse(ns.args[1])
     if (data.Sleep > 0) {
         let start = Date.now()
@@ -29,12 +28,18 @@ export async function main(ns) {
         let delta = actual - data.Sleep
         if (delta > global.StackDelay) {
             ns.tprintf("%s stack %d overslept by %.2f", data.Script, data.Stack, delta)
+            let metrics = { "script": data.Script, "overshoot": delta, "ts": endTime, "target": data.Target }
+            await ns.writePort(global.METRICS_PORT, JSON.stringify(metrics))
             return
         }
     }
     await ns[data.Script](data.Target)
-    let endTime = Date.now()
-    let delta = endTime - data.ExpectedEnd
+    if ("ExpectedEnd" in data) {
+        let endTime = Date.now()
+        let delta = endTime - data.ExpectedEnd
+        let metrics = { "script": data.Script, "overshoot": delta, "ts": endTime, "target": data.Target }
+        await ns.writePort(global.METRICS_PORT, JSON.stringify(metrics))
+    }
     // ns.tprintf("%s %s %d complete overrun %.2f", new Date().toISOString(), data.Script, data.Stack, delta)
 }
 

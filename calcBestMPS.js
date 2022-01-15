@@ -2,6 +2,7 @@ import * as script from "/module/script-functions.js"
 import * as node from "/module/node-functions.js"
 import * as helper from "/module/helper-functions.js"
 import * as stack from "/module/stack-functions.js"
+import * as global from "/module/globals.js"
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -23,6 +24,8 @@ export async function main(ns) {
         all = ns.args[0] == "all"
         if (!all) {
             hackable = [ns.args[0]]
+        } else {
+            hackable = allNodes
         }
     }
 
@@ -42,17 +45,21 @@ export async function main(ns) {
             let cycleTime = 0
             percent = script.GetLargestPercent(ns, node)
             stackData = stack.CalcStacks(ns, node, percent)
-            let stolen = max * percent
+            let stolen = max * Math.max(percent, .01)
             if (stackData.Stacks > 1) {
                 let hackTime = ns.getHackTime(node)
                 let notUsedStacks = stackData.Total - stackData.Stacks
-                hackTime = hackTime - (notUsedStacks * stack.MinStackInterval)
+                hackTime = hackTime - (notUsedStacks * global.MinStackInterval)
                 cycleTime = ns.getWeakenTime(node) + hackTime
             } else {
-                cycleTime = ns.getWeakenTime(node)
+                if (percent == 0) {
+                    let hackTime = ns.getHackTime(node)
+                    cycleTime = ns.getWeakenTime(node) + hackTime
+                } else {
+                    cycleTime = ns.getWeakenTime(node)
+                }
             }
             mps = stolen / (cycleTime / 1000)
-
         }
         let isTargetted = ""
         let isPerfect = ""
@@ -89,7 +96,10 @@ export async function main(ns) {
         })
     }
     options.sort(function (a, b) {
-        return a.totalGain - b.totalGain;
+        if (a.totalGain != b.totalGain) {
+            return a.totalGain - b.totalGain;
+        }
+        return a.gain - b.gain;
     });
     for (let i = 0; i < options.length; i++) {
         let doPrint = false
@@ -113,4 +123,9 @@ export async function main(ns) {
         }
         await ns.sleep(1)
     }
+}
+
+
+export function autocomplete(data, args) {
+    return [...data.servers];
 }

@@ -23,7 +23,7 @@ export async function main(ns) {
         }
         let trainingHalf = Math.ceil(orderedMembers.length / 2)
         if (orderedMembers.length == 12) {
-            trainingHalf = 0
+            trainingHalf = 8
         }
         for (let i = 0; i < trainingHalf; i++) {
             let trainingMember = orderedMembers.pop()

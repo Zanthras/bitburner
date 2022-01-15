@@ -67,6 +67,9 @@ export async function main(ns) {
                         if (tOvershoot > 0) {
                             threads.Grow = threads.Grow - tOvershoot
                         }
+                        if (threads.Grow < 1) {
+                            continue
+                        }
                         let togrow = { "Script": "grow", "Target": target, "Sleep": 0 }
                         ns.run(script.grow_js, threads.Grow, target, JSON.stringify(togrow))
                         let toweak = { "Script": "weaken", "Target": target, "Sleep": 0 }
