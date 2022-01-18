@@ -78,7 +78,7 @@ export async function main(ns) {
             if (script.isServerPerfect(ns, node)) {
                 startStack(ns, i, node, stackInfo)
             } else {
-                ns.tprintf("Skipping stack " + i)
+                // ns.tprintf("Skipping stack " + i)
             }
             let cycleEndTime = Date.now()
             let timeToKill = global.MinStackInterval - (cycleEndTime - cycleStartTime)
@@ -117,6 +117,8 @@ function startStack(ns, sID, node, stackInfo) {
 /** @param {NS} ns **/
 async function simpleStack(ns, node, percent) {
     let stackInfo = stack.generateStack(ns, percent, node)
+    // ns.tprint(stackInfo)
+    // ns.exit()
     startStack(ns, 0, node, stackInfo)
     await script.waitforAllSinglecompletion(ns, node)
 }
@@ -128,8 +130,8 @@ async function runSimpleStacks(ns, node) {
         // If I cant even do a 1% stack then alternate between hacking and fixing
         if (percent < .01) {
             await script.FixUpServer(ns, node)
-            let hackThreads = script.calcThreadstoDrainNPercentMoney(ns, node, .01)
-            let tohack = { "Script": "hack", "Target": target, "Sleep": 0 }
+            let hackThreads = script.calcThreadstoHack1Percent(ns, node)
+            let tohack = { "Script": "hack", "Target": node, "Sleep": 0 }
             ns.run(script.hack_js, hackThreads, node, JSON.stringify(tohack))
             await script.waitforAllSinglecompletion(ns, node)
         } else {
