@@ -18,28 +18,32 @@ export async function Singleton(ns) {
         let start = Date.now()
         let expectedTotal = (data.Duration + data.Sleep)
         let startDelay = (expectedTotal + start) - data.ExpectedEnd
-        if (startDelay > 150) {
+        if (startDelay > data.Sleep) {
+            ns.tprintf("%s %s stack %d too much startup delay %.2f", data.Target, data.Script, data.Stack, startDelay)
+        }
+        // shorten the sleep to manage startup delay
+        if (startDelay > 5) {
             data.Sleep = data.Sleep - startDelay
-            ns.tprintf("%s stack %d startupdelay %.2f", data.Script, data.Stack, startDelay)
         }
         await ns.sleep(data.Sleep)
-        let end = Date.now()
-        let actual = end - start
+        let endTime = Date.now()
+        let actual = endTime - start
         let delta = actual - data.Sleep
         if (delta > global.StackDelay) {
-            ns.tprintf("%s stack %d overslept by %.2f", data.Script, data.Stack, delta)
-            let metrics = { "script": data.Script, "overshoot": delta, "ts": endTime, "target": data.Target }
-            await ns.writePort(global.METRICS_PORT, JSON.stringify(metrics))
-            return
+            // ns.tprintf("%s %s stack %d overslept by %.2f", data.Target, data.Script, data.Stack, delta)
+            // let metrics = { "script": data.Script, "overshoot": delta, "ts": endTime, "target": data.Target }
+            // await ns.writePort(global.METRICS_PORT, JSON.stringify(metrics))
+            // return
         }
     }
     await ns[data.Script](data.Target)
-    if ("ExpectedEnd" in data) {
-        let endTime = Date.now()
-        let delta = endTime - data.ExpectedEnd
-        let metrics = { "script": data.Script, "overshoot": delta, "ts": endTime, "target": data.Target }
-        await ns.writePort(global.METRICS_PORT, JSON.stringify(metrics))
-    }
+    // ns.tprint(new Date().toISOString(), " ", data.Script, " done")
+    // if ("ExpectedEnd" in data) {
+    // 	let endTime = Date.now()
+    // 	let delta = endTime - data.ExpectedEnd
+    // 	let metrics = { "script": data.Script, "overshoot": delta, "ts": endTime, "target": data.Target }
+    // 	await ns.writePort(global.METRICS_PORT, JSON.stringify(metrics))
+    // }
     // ns.tprintf("%s %s %d complete overrun %.2f", new Date().toISOString(), data.Script, data.Stack, delta)
 }
 
