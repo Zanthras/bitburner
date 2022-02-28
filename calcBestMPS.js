@@ -84,6 +84,7 @@ export async function main(ns) {
                 isTargetted = "NotRooted"
             }
         }
+        let hackPercent = ns.hackAnalyzeChance(node)
         options.push({
             "node": node,
             "gain": mps,
@@ -92,7 +93,8 @@ export async function main(ns) {
             "perfect": isPerfect,
             "targetted": isTargetted,
             "root": sDat.hasAdminRights,
-            "totalGain": mps * stackData.Stacks
+            "chance": hackPercent,
+            "totalGain": mps * stackData.Stacks * hackPercent
         })
     }
     options.sort(function (a, b) {
@@ -111,13 +113,14 @@ export async function main(ns) {
             }
         }
         if (doPrint) {
-            ns.tprintf("%18s %8s(%2d%%) * %3d(%3d) = %8s %s %s",
+            ns.tprintf("%18s %8s(%2d%%) * %3d(%3d) = %8s(%3d%%) %s %s",
                 options[i].node,
                 helper.readablizeMoney(options[i].gain),
                 options[i].percent,
                 options[i].stacks.Stacks,
                 options[i].stacks.Total,
-                helper.readablizeMoney(options[i].gain * options[i].stacks.Stacks),
+                helper.readablizeMoney(options[i].gain * options[i].stacks.Stacks * options[i].chance),
+                Math.floor(options[i].chance * 100),
                 options[i].perfect,
                 options[i].targetted)
         }

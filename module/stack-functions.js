@@ -20,7 +20,7 @@ export function CalcStacks(ns, node, percent) {
         final = 0
     }
     // ns.tprintf("%18s hT: %d gT: %d wT %d AvailT: %d stacks:%d tN:%d percent:%d%%", node, threadCount.Hack, threadCount.Grow, weakenThreads, maxAvailableThreads, final, stackThreads, percent*100)
-    return { "Total": maxCycles, "Stacks": final }
+    return { "Total": maxCycles, "Stacks": final, "Threads": threadCount}
 }
 
 /** @param {NS} ns **/

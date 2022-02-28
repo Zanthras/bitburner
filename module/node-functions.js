@@ -2,6 +2,17 @@
 
 export var AllRemoteServers = ["iron-gym", "max-hardware", "omega-net", "avmnite-02h", "I.I.I.I", "rho-construction", "global-pharm", "lexo-corp", "aerocorp", "zb-institute", "millenium-fitness", "snap-fitness", "unitalife", "solaris", "deltaone", "zeus-med", "nova-med", "microdyne", "univ-energy", "icarus", "defcomm", "zb-def", "applied-energetics", "vitalife", "stormtech", "kuai-gong", "blade", "4sigma", "powerhouse-fitness", "clarkinc", "ecorp", "titan-labs", "helios", ".", "b-and-a", "megacorp", "taiyang-digital", "run4theh111z", "fulcrumtech", "omnitek", "nwo", "The-Cave", "fulcrumassets", "infocomm", "alpha-ent", "netlink", "rothman-uni", "the-hub", "summit-uni", "aevum-police", "galactic-cyber", "omnia", "harakiri-sushi", "hong-fang-tea", "joesguns", "CSEC", "nectar-net", "neo-net", "crush-fitness", "johnson-ortho", "catalyst", "syscore", "sigma-cosmetics", "foodnstuff", "n00dles", "zer0", "phantasy", "comptek", "silver-helix"]
 
+/** @param {NS} ns **/
+export async function CopyFiles(ns, node) {
+    if (node == "home") {
+        return
+    }
+    await ns.scp(["calcBestMPS.js", "orchestrate.js", "scan.js", "replace.js"], "home", node)
+    await ns.scp(["/single/hack.js", "/single/grow.js", "/single/weaken.js", "/single/idle.js", "/single/minimal.js", "/single/share.js"], "home", node)
+    await ns.scp(["/module/helper-functions.js", "/module/node-functions.js", "/module/script-functions.js", "/module/stack-functions.js", "/module/globals.js"], "home", node)
+    await ns.scp(["/background/fixup.js", "/background/mass-fix.js", "/background/idle.js", "/background/manage-hacknet.js", "/background/scan-acquire.js", "/background/share.js", "/background/crime.js"], "home", node)
+}
+
 export function findAllNodes(ns) {
     let scanned = new Map();
     scanned.set("home", "true")
@@ -54,6 +65,9 @@ export function filterNotHome(ns, nodes) {
     var other = [];
     for (let i = 0; i < nodes.length; i++) {
         if (nodes[i].startsWith("home")) {
+            continue
+        }
+        if (nodes[i].startsWith("hacknet")) {
             continue
         }
         other.push(nodes[i])

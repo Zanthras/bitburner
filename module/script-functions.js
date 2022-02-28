@@ -10,8 +10,14 @@ export function getServerThreadMax(ns) {
     let host = ns.getHostname()
     var singleInstance = ns.getScriptRam(minimal_js, host)
     var max = ns.getServerMaxRam(host)
-    if (max > 1000) {
-        max = max - 128 // Massive overhead... thats really tiny on a TB class servers
+    if (host == "home") {
+        if (max > 2000) {
+            max = max - 128 // Massive overhead... thats really tiny on a TB class servers
+        } else {
+            max = max - 20
+        }
+    } else {
+        max = max - 20
     }
     let instances = Math.floor(max / singleInstance)
     return instances
@@ -22,10 +28,14 @@ export function getServerThreadAvail(ns) {
     let host = ns.getHostname()
     var singleInstance = ns.getScriptRam(grow_js, host)
     var max = ns.getServerMaxRam(host)
-    if (max > 1000) {
-        max = max - 128 // Massive overhead... thats really tiny on a TB class servers
+    if (host == "home") {
+        if (max > 2000) {
+            max = max - 128 // Massive overhead... thats really tiny on a TB class servers
+        } else {
+            max = max - 20
+        }
     } else {
-        max = max - 10
+        max = max - 20
     }
     var used = ns.getServerUsedRam(host)
     let instances = Math.floor((max - used) / singleInstance)
@@ -80,6 +90,27 @@ export async function waitforcompletion(ns, script, host) {
 }
 
 /** @param {NS} ns **/
+export async function waitforAllSinglecompletionNoDelay(ns, target) {
+    while (true) {
+        let found = false
+        let existing = ns.ps()
+        for (let i = 0; i < existing.length; i++) {
+            if (existing[i].filename.startsWith("/single")) {
+                if (existing[i].args[0] == target) {
+                    found = true
+                    break
+                }
+            }
+        }
+        if (found) {
+            await ns.sleep(50)
+        } else {
+            return
+        }
+    }
+}
+
+/** @param {NS} ns **/
 export async function waitforAllSinglecompletion(ns, target) {
     // Just a small sleep just in case of spawning delay
     await ns.sleep(500)
@@ -99,6 +130,73 @@ export async function waitforAllSinglecompletion(ns, target) {
             await ns.sleep(100)
         } else {
             return
+        }
+    }
+}
+
+/** @param {NS} ns **/
+export async function waitforAllSinglecompletionServer(ns, target, server) {
+    while (true) {
+        let found = false
+        let existing = ns.ps(server)
+        for (let i = 0; i < existing.length; i++) {
+            if (existing[i].filename.startsWith("/single")) {
+                if (existing[i].args[0] == target) {
+                    found = true
+                    break
+                }
+            }
+        }
+        if (found) {
+            await ns.sleep(100)
+        } else {
+            return
+        }
+    }
+}
+
+/** @param {NS} ns **/
+export function GetLimitedPercent(ns, target, limit) {
+
+    // All possible percents in an array for a binary search
+    let searchPercents = []
+
+    for (let i = 0; i <= limit; i += .01) {
+        searchPercents.push(i)
+    }
+    while (true) {
+        var testPercent = 0
+        var index = 0
+        if (searchPercents.length == 1) {
+            return searchPercents[0]
+        }
+        // Im the most performance senstive when at the highest percent, so lets start at the top and work our way down
+        if (searchPercents.length == 96) {
+            index = 95
+            testPercent = searchPercents[index]
+        } else {
+            index = Math.ceil(searchPercents.length / 2)
+            testPercent = searchPercents[index]
+        }
+
+        let threadCount = calcThreadstoStealNPercent(ns, target, testPercent)
+        let hackSecIncrease = threadCount.Hack * 0.002
+        let growSecIncrease = threadCount.Grow * 0.004
+        let weakenThreadsNeeded = Math.ceil((hackSecIncrease + growSecIncrease) / .05)
+        let availThreads = getServerThreadAvail(ns)
+        let totalNeeded = threadCount.Hack + threadCount.Grow + weakenThreadsNeeded
+        // ns.tprintf(
+        // 	"Percent: %d hT:%d gT:%d wT:%d tT:%d aT:%d",
+        // 	Math.floor(testPercent * 100),
+        // 	threadCount.Hack,
+        // 	threadCount.Grow,
+        // 	weakenThreadsNeeded,
+        // 	totalNeeded,
+        // 	availThreads)
+        if (totalNeeded > availThreads) {
+            searchPercents = searchPercents.slice(0, index)
+        } else {
+            searchPercents = searchPercents.slice(index, searchPercents.length)
         }
     }
 }
@@ -160,12 +258,16 @@ export function calcThreadstoStealNPercent(ns, host, percent) {
     let hackedSec = minSec + secIncrease
     let secPercent = hackedSec / minSec
     // Pad the grow a bit to help out during hack spikes
-    let addition = Math.floor(percent * 100 / 40)
+    let addition = Math.floor(percent * 100 / 20)
     percent = percent + (addition / 100)
     let growThreads = ns.growthAnalyze(host, 1 / (1 - percent))
     growThreads = growThreads * secPercent
-    let results = { "Hack": Math.floor(hackThreads), "Grow": Math.ceil(growThreads) }
-    // ns.tprint(Math.floor(percent*100), " ", results)
+
+    let hackSecIncrease = Math.floor(hackThreads) * 0.002
+    let growSecIncrease = Math.ceil(growThreads) * 0.004
+    let weakenThreads = (hackSecIncrease + growSecIncrease) / .05
+
+    let results = { "Hack": Math.floor(hackThreads), "Grow": Math.ceil(growThreads), "Weak": Math.ceil(weakenThreads)}
     return results
 }
 
